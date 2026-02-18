@@ -1,0 +1,50 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-shortener}
+      DB_USER: ${MYSQL_USER:-shortener}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-shortener}
+      YII_ENV: dev
+      YII_DEBUG: 1
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - php
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./:/app
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MARIADB_DATABASE: ${MYSQL_DATABASE:-shortener}
+      MARIADB_USER: ${MYSQL_USER:-shortener}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD:-shortener}
+    ports:
+      - "${DB_PORT_FORWARD:-3307}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -uroot -p$${MARIADB_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db_data:
