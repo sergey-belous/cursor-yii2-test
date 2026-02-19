@@ -12,6 +12,7 @@ export default defineConfig({
   },
   build: {
     manifest: true,
+    modulePreload: false,
     outDir: path.resolve(__dirname, "../web/dist"),
     emptyOutDir: true,
     rollupOptions: {
