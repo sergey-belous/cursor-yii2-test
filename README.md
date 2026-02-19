@@ -1,21 +1,34 @@
-# Сервис коротких ссылок + QR (Yii2 Basic)
+# Сервис коротких ссылок + QR (Yii2 + Vue 3)
 
-Проект реализует сокращение URL с генерацией QR-кода и редиректом по короткой ссылке.
-Стек: `Yii2 Basic`, `MariaDB`, `jQuery`, `Bootstrap`, `Docker Compose`, `Makefile`.
+Приложение сокращает URL, генерирует QR-код и ведет статистику переходов.
 
-## Возможности
+- Backend: `Yii2`, `MariaDB`
+- Frontend: `Vue 3`, `Vue Router`, `Vite`, `Bootstrap 5`
+- Инфраструктура: `Docker Compose`, `Makefile`
 
-- Ввод URL на главной странице и отправка через Ajax (без перезагрузки).
-- Валидация URL (только `http/https`).
-- Проверка доступности ресурса через `cURL` (`HEAD`, fallback `GET`).
-- Генерация короткой ссылки и QR-кода локально (без внешних API).
-- CAPTCHA и обработка изображений через `ImageMagick` (`imagick` extension).
-- Редирект по короткому коду на оригинальный URL.
-- Логирование переходов: IP пользователя и счетчик переходов.
+## Что реализовано
+
+- SPA-интерфейс на Vue 3 для страниц `/`, `/login`, `/contact`, `/about`, `404`.
+- JSON API в Yii2 для shortener/auth/contact.
+- Редирект по короткой ссылке `/<code>` с учетом посещений.
+- Валидация URL (`http/https`), проверка доступности через `cURL`.
+- Генерация QR-кода локально (без внешних API).
+- Contact форма с CAPTCHA и отправкой письма.
+
+## Архитектура маршрутов
+
+- SPA shell: `GET /`, `GET /login`, `GET /contact`, `GET /about` и другие клиентские маршруты.
+- API:
+  - `POST /api/link/create`
+  - `POST /api/auth/login`
+  - `POST /api/auth/logout`
+  - `GET /api/auth/me`
+  - `POST /api/contact/submit`
+- Редирект короткой ссылки: `GET /<code>`
 
 ## Структура БД
 
-### Таблица `short_link`
+### `short_link`
 
 - `id` (PK)
 - `original_url` (varchar(2048))
@@ -24,7 +37,7 @@
 - `created_at` (int)
 - `updated_at` (int)
 
-### Таблица `click_log`
+### `click_log`
 
 - `id` (PK)
 - `short_link_id` (FK -> `short_link.id`)
@@ -36,7 +49,7 @@
 ### Требования
 
 - Docker
-- Docker Compose (plugin `docker compose`)
+- Docker Compose plugin (`docker compose`)
 - Make
 
 ### 1) Собрать и поднять контейнеры
@@ -48,14 +61,16 @@ make up
 
 Сервисы:
 
-- `nginx` (порт `8080`, можно изменить переменной `APP_PORT`)
+- `nginx` (порт `8080`, настраивается через `APP_PORT`)
 - `php-fpm`
-- `mariadb` (порт `3307`, можно изменить переменной `DB_PORT_FORWARD`)
+- `mariadb` (порт `3307`, настраивается через `DB_PORT_FORWARD`)
+- `node` (служебный сервис для npm-команд)
 
-### 2) Установить зависимости в контейнере
+### 2) Установить backend и frontend зависимости
 
 ```bash
 make install
+make npm-install
 ```
 
 ### 3) Применить миграции
@@ -64,46 +79,92 @@ make install
 make migrate
 ```
 
-### 4) Открыть приложение
+### 4) Собрать фронтенд
+
+```bash
+make npm-build
+```
+
+### 5) Открыть приложение
 
 ```text
 http://localhost:8080
 ```
 
-## Проверка сценария из ТЗ
+## Режимы фронтенда
 
-1. Открыть главную страницу.
+### Production-like (рекомендуется по умолчанию)
+
+- Сборка в `web/dist`
+- Отдается через `nginx` + `php`
+
+```bash
+make npm-build
+```
+
+### Dev (Vite HMR)
+
+Если в `web/dist` нет production manifest, Yii2 автоматически подключает Vite dev server.
+
+```bash
+make npm-dev
+```
+
+По умолчанию используется `http://localhost:5173`.
+При необходимости можно переопределить:
+
+```bash
+VITE_DEV_SERVER_URL=http://localhost:5173 make npm-dev
+```
+
+## Проверка ключевого сценария
+
+1. Открыть `/`.
 2. Вставить URL и нажать `OK`.
-3. Проверить варианты:
-   - невалидный URL -> ошибка валидации;
-   - недоступный URL -> сообщение `Данный URL не доступен`;
-   - валидный и доступный URL -> отображаются короткая ссылка и QR-код.
+3. Проверить:
+   - невалидный URL -> сообщение валидации;
+   - недоступный URL -> `Данный URL не доступен`;
+   - валидный URL -> короткая ссылка + QR.
 4. Перейти по короткой ссылке:
-   - происходит редирект на оригинальный сайт;
-   - в БД создается запись в `click_log`;
+   - происходит редирект;
+   - в БД пишется `click_log`;
    - увеличивается `short_link.visits_count`.
+
+## Тесты
+
+Обновлены тесты под новый SPA/API сценарий:
+
+- Functional: API-auth, API-contact, API-link валидация.
+- Acceptance: маршруты SPA и формы Vue.
+
+Запуск (пример):
+
+```bash
+vendor/bin/codecept run functional
+```
 
 ## Полезные команды Makefile
 
 ```bash
-make up        # поднять контейнеры
-make down      # остановить контейнеры
-make logs      # смотреть логи
-make bash      # shell в php-контейнере
-make composer ARGS="show"
+make up
+make down
+make logs
+make bash
 make migrate
+make npm-install
+make npm-dev
+make npm-build
 ```
 
-## Переменные окружения (docker-compose)
+## Переменные окружения
 
-Можно переопределять при запуске через shell:
-
-- `APP_PORT` (по умолчанию `8080`)
-- `DB_PORT_FORWARD` (по умолчанию `3307`)
-- `MYSQL_DATABASE` (по умолчанию `shortener`)
-- `MYSQL_USER` (по умолчанию `shortener`)
-- `MYSQL_PASSWORD` (по умолчанию `shortener`)
-- `MYSQL_ROOT_PASSWORD` (по умолчанию `root`)
+- `APP_PORT` (default `8080`)
+- `DB_PORT_FORWARD` (default `3307`)
+- `MYSQL_DATABASE` (default `shortener`)
+- `MYSQL_USER` (default `shortener`)
+- `MYSQL_PASSWORD` (default `shortener`)
+- `MYSQL_ROOT_PASSWORD` (default `root`)
+- `VITE_DEV_SERVER_URL` (default `http://localhost:5173`)
 
 Пример:
 

@@ -2,57 +2,61 @@
 
 class LoginFormCest
 {
-    public function _before(\FunctionalTester $I)
+    public function meReturnsGuestByDefault(\FunctionalTester $I)
     {
-        $I->amOnRoute('site/login');
-    }
+        $I->sendAjaxGetRequest('/api/auth/me');
+        $I->seeResponseCodeIs(200);
+        $response = $this->decodeJsonResponse($I);
 
-    public function openLoginPage(\FunctionalTester $I)
-    {
-        $I->see('Login', 'h1');
-    }
-
-    // demonstrates `amLoggedInAs` method
-    public function internalLoginById(\FunctionalTester $I)
-    {
-        $I->amLoggedInAs(100);
-        $I->amOnPage('/');
-        $I->see('Logout (admin)');
-    }
-
-    // demonstrates `amLoggedInAs` method
-    public function internalLoginByInstance(\FunctionalTester $I)
-    {
-        $I->amLoggedInAs(\app\models\User::findByUsername('admin'));
-        $I->amOnPage('/');
-        $I->see('Logout (admin)');
+        $I->assertSame(false, $response['authenticated'] ?? null);
+        $I->assertSame(null, $response['user'] ?? null);
     }
 
     public function loginWithEmptyCredentials(\FunctionalTester $I)
     {
-        $I->submitForm('#login-form', []);
-        $I->expectTo('see validations errors');
-        $I->see('Username cannot be blank.');
-        $I->see('Password cannot be blank.');
-    }
+        $I->sendAjaxPostRequest('/api/auth/login', []);
+        $I->seeResponseCodeIs(422);
+        $response = $this->decodeJsonResponse($I);
 
-    public function loginWithWrongCredentials(\FunctionalTester $I)
-    {
-        $I->submitForm('#login-form', [
-            'LoginForm[username]' => 'admin',
-            'LoginForm[password]' => 'wrong',
-        ]);
-        $I->expectTo('see validations errors');
-        $I->see('Incorrect username or password.');
+        $I->assertSame(false, $response['success'] ?? null);
+        $I->assertSame('Username cannot be blank.', $response['message'] ?? null);
     }
 
     public function loginSuccessfully(\FunctionalTester $I)
     {
-        $I->submitForm('#login-form', [
-            'LoginForm[username]' => 'admin',
-            'LoginForm[password]' => 'admin',
+        $I->sendAjaxPostRequest('/api/auth/login', [
+            'username' => 'admin',
+            'password' => 'admin',
+            'rememberMe' => true,
         ]);
-        $I->see('Logout (admin)');
-        $I->dontSeeElement('form#login-form');
+        $I->seeResponseCodeIs(200);
+        $response = $this->decodeJsonResponse($I);
+        $I->assertSame(true, $response['success'] ?? null);
+        $I->assertSame('admin', $response['user']['username'] ?? null);
+
+        $I->sendAjaxGetRequest('/api/auth/me');
+        $I->seeResponseCodeIs(200);
+        $response = $this->decodeJsonResponse($I);
+        $I->assertSame(true, $response['authenticated'] ?? null);
+        $I->assertSame('admin', $response['user']['username'] ?? null);
+
+        $I->sendAjaxPostRequest('/api/auth/logout', []);
+        $I->seeResponseCodeIs(200);
+        $response = $this->decodeJsonResponse($I);
+        $I->assertSame(true, $response['success'] ?? null);
+
+        $I->sendAjaxGetRequest('/api/auth/me');
+        $I->seeResponseCodeIs(200);
+        $response = $this->decodeJsonResponse($I);
+        $I->assertSame(false, $response['authenticated'] ?? null);
+    }
+
+    private function decodeJsonResponse(\FunctionalTester $I): array
+    {
+        $response = json_decode($I->grabPageSource(), true);
+
+        $I->assertIsArray($response);
+
+        return $response;
     }
 }

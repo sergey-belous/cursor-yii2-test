@@ -16,6 +16,9 @@ return [
     'language' => 'en-US',
     'components' => [
         'db' => $db,
+        'cache' => [
+            'class' => 'yii\caching\FileCache',
+        ],
         'mailer' => [
             'class' => \yii\symfonymailer\Mailer::class,
             'viewPath' => '@app/mail',
@@ -27,7 +30,15 @@ return [
             'basePath' => __DIR__ . '/../web/assets',
         ],
         'urlManager' => [
+            'enablePrettyUrl' => true,
             'showScriptName' => true,
+            'rules' => [
+                ['pattern' => 'api/link/create', 'route' => 'api/link/create', 'verb' => 'POST'],
+                ['pattern' => 'api/auth/login', 'route' => 'api/auth/login', 'verb' => 'POST'],
+                ['pattern' => 'api/auth/logout', 'route' => 'api/auth/logout', 'verb' => 'POST'],
+                ['pattern' => 'api/auth/me', 'route' => 'api/auth/me', 'verb' => 'GET'],
+                ['pattern' => 'api/contact/submit', 'route' => 'api/contact/submit', 'verb' => 'POST'],
+            ],
         ],
         'user' => [
             'identityClass' => 'app\models\User',
@@ -35,6 +46,9 @@ return [
         'request' => [
             'cookieValidationKey' => 'test',
             'enableCsrfValidation' => false,
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
             // but if you absolutely need it set cookie domain to localhost
             /*
             'csrfCookie' => [

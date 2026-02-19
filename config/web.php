@@ -15,6 +15,9 @@ $config = [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => '5bqOAOAx6uoviDOvre4mMT2WCW9pvcHx',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
@@ -46,8 +49,21 @@ $config = [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-                ['pattern' => 'link/create', 'route' => 'link/create', 'verb' => 'POST'],
+                ['pattern' => 'api/link/create', 'route' => 'api/link/create', 'verb' => 'POST'],
+                ['pattern' => 'api/auth/login', 'route' => 'api/auth/login', 'verb' => 'POST'],
+                ['pattern' => 'api/auth/logout', 'route' => 'api/auth/logout', 'verb' => 'POST'],
+                ['pattern' => 'api/auth/me', 'route' => 'api/auth/me', 'verb' => 'GET'],
+                ['pattern' => 'api/contact/submit', 'route' => 'api/contact/submit', 'verb' => 'POST'],
                 '<code:[A-Za-z0-9]{8}>' => 'redirect/go',
+                '' => 'site/app',
+                'login' => 'site/app',
+                'contact' => 'site/app',
+                'about' => 'site/app',
+                [
+                    'pattern' => '<path:(?!api|site/|debug|gii)[A-Za-z0-9_\\-/]+>',
+                    'route' => 'site/app',
+                    'verb' => 'GET',
+                ],
             ],
         ],
     ],

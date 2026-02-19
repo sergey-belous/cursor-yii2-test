@@ -1,12 +1,10 @@
 <?php
 
-use yii\helpers\Url;
-
 class ContactCest
 {
     public function _before(\AcceptanceTester $I)
     {
-        $I->amOnPage(Url::toRoute('/site/contact'));
+        $I->amOnPage('/contact');
     }
 
     public function contactPageWorks(AcceptanceTester $I)
@@ -18,17 +16,15 @@ class ContactCest
     public function contactFormCanBeSubmitted(AcceptanceTester $I)
     {
         $I->amGoingTo('submit contact form with correct data');
-        $I->fillField('#contactform-name', 'tester');
-        $I->fillField('#contactform-email', 'tester@example.com');
-        $I->fillField('#contactform-subject', 'test subject');
-        $I->fillField('#contactform-body', 'test content');
-        $I->fillField('#contactform-verifycode', 'testme');
+        $I->fillField('#contact-name', 'tester');
+        $I->fillField('#contact-email', 'tester@example.com');
+        $I->fillField('#contact-subject', 'test subject');
+        $I->fillField('#contact-body', 'test content');
+        $I->fillField('#contact-verify-code', 'testme');
 
-        $I->click('contact-button');
+        $I->click('Submit');
+        $I->wait(1);
 
-        $I->wait(2); // wait for button to be clicked
-
-        $I->dontSeeElement('#contact-form');
         $I->see('Thank you for contacting us. We will respond to you as soon as possible.');
     }
 }

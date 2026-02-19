@@ -1,18 +1,17 @@
 <?php
 
-use yii\helpers\Url;
-
 class HomeCest
 {
     public function ensureThatHomePageWorks(AcceptanceTester $I)
     {
-        $I->amOnPage(Url::toRoute('/site/index'));
-        $I->see('My Company');
+        $I->amOnPage('/');
+        $I->see('URL Shortener');
+        $I->see('Сервис коротких ссылок + QR');
 
         $I->seeLink('About');
         $I->click('About');
-        $I->wait(2); // wait for page to be opened
+        $I->wait(1);
 
-        $I->see('This is the About page.');
+        $I->see('Это SPA-версия сервиса коротких ссылок на Vue 3.');
     }
 }

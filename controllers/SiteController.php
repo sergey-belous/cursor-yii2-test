@@ -3,42 +3,11 @@
 namespace app\controllers;
 
 use Yii;
-use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\Response;
-use yii\filters\VerbFilter;
-use app\models\LoginForm;
-use app\models\ContactForm;
-use app\models\forms\ShortenUrlForm;
 
 class SiteController extends Controller
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'only' => ['logout'],
-                'rules' => [
-                    [
-                        'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'logout' => ['post'],
-                ],
-            ],
-        ];
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -56,76 +25,61 @@ class SiteController extends Controller
     }
 
     /**
-     * Displays homepage.
-     *
-     * @return string
+     * SPA entrypoint for root page.
      */
-    public function actionIndex()
+    public function actionIndex(): string
     {
-        return $this->render('index', [
-            'model' => new ShortenUrlForm(),
-        ]);
+        return $this->renderSpaShell();
     }
 
     /**
-     * Login action.
-     *
-     * @return Response|string
+     * Explicit SPA entrypoint used by url rules.
      */
-    public function actionLogin()
+    public function actionApp(): string
+    {
+        return $this->renderSpaShell();
+    }
+
+    /**
+     * Legacy route compatibility for /site/login.
+     */
+    public function actionLogin(): string
+    {
+        return $this->renderSpaShell();
+    }
+
+    /**
+     * Legacy route compatibility for /site/contact.
+     */
+    public function actionContact(): string
+    {
+        return $this->renderSpaShell();
+    }
+
+    /**
+     * Legacy route compatibility for /site/about.
+     */
+    public function actionAbout(): string
+    {
+        return $this->renderSpaShell();
+    }
+
+    /**
+     * Legacy route compatibility for /site/logout.
+     */
+    public function actionLogout(): Response
     {
         if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
+            Yii::$app->user->logout();
         }
 
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
-        }
-
-        $model->password = '';
-        return $this->render('login', [
-            'model' => $model,
-        ]);
+        return $this->redirect(['/']);
     }
 
-    /**
-     * Logout action.
-     *
-     * @return Response
-     */
-    public function actionLogout()
+    private function renderSpaShell(): string
     {
-        Yii::$app->user->logout();
+        $this->layout = 'spa';
 
-        return $this->goHome();
-    }
-
-    /**
-     * Displays contact page.
-     *
-     * @return Response|string
-     */
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
-
-            return $this->refresh();
-        }
-        return $this->render('contact', [
-            'model' => $model,
-        ]);
-    }
-
-    /**
-     * Displays about page.
-     *
-     * @return string
-     */
-    public function actionAbout()
-    {
-        return $this->render('about');
+        return $this->render('app');
     }
 }

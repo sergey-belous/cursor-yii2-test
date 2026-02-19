@@ -1,0 +1,1 @@
+function f(e,i){var a;if(!((a=e==null?void 0:e.response)!=null&&a.data))return i;const{message:n,errors:t}=e.response.data;if(typeof n=="string"&&n.length>0)return n;if(t&&typeof t=="object"){const s=Object.keys(t)[0];if(s&&Array.isArray(t[s])&&t[s].length>0)return t[s][0]}return i}export{f as e};
