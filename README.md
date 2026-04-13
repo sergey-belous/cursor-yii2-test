@@ -8,22 +8,18 @@
 
 ## Что реализовано
 
-- SPA-интерфейс на Vue 3 для страниц `/`, `/login`, `/contact`, `/about`, `404`.
 - JSON API в Yii2 для shortener/auth/contact.
 - Редирект по короткой ссылке `/<code>` с учетом посещений.
 - Валидация URL (`http/https`), проверка доступности через `cURL`.
 - Генерация QR-кода локально (без внешних API).
-- Contact форма с CAPTCHA и отправкой письма.
 
 ## Архитектура маршрутов
 
-- SPA shell: `GET /`, `GET /login`, `GET /contact`, `GET /about` и другие клиентские маршруты.
 - API:
   - `POST /api/link/create`
   - `POST /api/auth/login`
   - `POST /api/auth/logout`
   - `GET /api/auth/me`
-  - `POST /api/contact/submit`
 - Редирект короткой ссылки: `GET /<code>`
 
 ## Структура БД
